@@ -2,7 +2,6 @@ import * as React from "react";
 import { Link, Outlet, useParams, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Copy, FileText, Pencil, Stethoscope } from "lucide-react";
 
-import { Avatar } from "@/components/ui/avatar";
 import { Badge, PatientStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { TabNav } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import { PageHeader } from "@/features/shell/AppShell";
 import { PrivacyShield } from "@/components/domain/PrivacyShield";
+import { PatientAvatar } from "./PatientAvatar";
 import { PatientFormDrawer } from "./PatientFormDrawer";
 import { StartVisitDialog } from "@/features/visits/StartVisitDialog";
 import { usePatient } from "@/lib/api/queries";
@@ -115,7 +115,7 @@ export default function PatientDetailLayout() {
 
       <Card className="mb-4">
         <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
-          <Avatar name={patient.display_name} seed={patient._id} size="lg" ring />
+          <PatientAvatar patient={patient} size="lg" ring />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-h1 text-ink">{patient.display_name}</h2>

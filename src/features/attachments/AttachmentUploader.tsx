@@ -1,10 +1,19 @@
 import * as React from "react";
-import { Camera, CircleCheck, CircleX, ImagePlus, RefreshCw, UploadCloud } from "lucide-react";
+import {
+  Camera,
+  CircleCheck,
+  CircleX,
+  ImagePlus,
+  RefreshCw,
+  Smartphone,
+  UploadCloud,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn, formatBytes } from "@/lib/utils";
 import { useUploadAttachment } from "@/lib/api/queries";
 import { messageOf } from "@/lib/api/client";
+import { PhoneCaptureDialog } from "./PhoneCaptureDialog";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -28,6 +37,7 @@ export function AttachmentUploader({
   const [dragging, setDragging] = React.useState(false);
   const [items, setItems] = React.useState<UploadItem[]>([]);
   const [rejected, setRejected] = React.useState<string[]>([]);
+  const [phoneOpen, setPhoneOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const cameraRef = React.useRef<HTMLInputElement>(null);
   const counter = React.useRef(0);
@@ -113,9 +123,18 @@ export function AttachmentUploader({
               size="sm"
               onClick={() => cameraRef.current?.click()}
               leadingIcon={<Camera className="h-3.5 w-3.5" />}
-              className="md:hidden"
+              className="hidden [@media(pointer:coarse)]:inline-flex"
             >
               Take photo
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setPhoneOpen(true)}
+              leadingIcon={<Smartphone className="h-3.5 w-3.5" />}
+              className="hidden [@media(pointer:fine)]:inline-flex"
+            >
+              Use phone camera
             </Button>
             <input
               ref={inputRef}
@@ -148,6 +167,8 @@ export function AttachmentUploader({
           ))}
         </ul>
       ) : null}
+
+      <PhoneCaptureDialog visitId={visitId} open={phoneOpen} onOpenChange={setPhoneOpen} />
 
       {items.length > 0 ? (
         <ul className="space-y-1.5" aria-live="polite">

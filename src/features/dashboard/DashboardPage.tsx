@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, CalendarDays, ShieldCheck, UserPlus, Users } from "lucide-react";
 
-import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { PageHeader } from "@/features/shell/AppShell";
+import { PatientAvatar } from "@/features/patients/PatientAvatar";
 import { usePatients } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth/SessionProvider";
 import { Can, usePermission } from "@/lib/permissions/Can";
@@ -149,7 +149,7 @@ export default function DashboardPage() {
                       to={`/patients/${patient._id}`}
                       className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-surface-2"
                     >
-                      <Avatar name={patient.display_name} seed={patient._id} />
+                      <PatientAvatar patient={patient} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[0.9375rem] font-semibold text-ink">
                           {patient.display_name}

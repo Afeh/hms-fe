@@ -2,17 +2,26 @@ import * as React from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Trash2 } from "lucide-react";
+import { Camera, Plus, Trash2, Webcam } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/dialog";
 import { Checkbox, Field, FormError, Input, Select } from "@/components/ui/input";
 import { ConflictDialog } from "@/components/domain/ConflictDialog";
-import { useCreatePatient, useUpdatePatient } from "@/lib/api/queries";
+import {
+  useCreatePatient,
+  useDeletePatientPhoto,
+  useUpdatePatient,
+  useUploadPatientPhoto,
+} from "@/lib/api/queries";
 import { ApiError, messageOf } from "@/lib/api/client";
 import { useToast } from "@/components/ui/toast";
 import { cn, isoDate, todayIso } from "@/lib/utils";
 import type { Patient, PatientCreate, PatientSex, PatientUpdate } from "@/types/api";
+import { PatientAvatar } from "./PatientAvatar";
+import { PatientPhotoCapture } from "./PatientPhotoCapture";
+
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 
 const optionalText = z.string().trim().max(200).optional();
 
@@ -91,8 +100,16 @@ export function PatientFormDrawer({
   const toast = useToast();
   const createPatient = useCreatePatient();
   const updatePatient = useUpdatePatient(patient?._id ?? "");
+  const uploadPhoto = useUploadPatientPhoto();
+  const deletePhoto = useDeletePatientPhoto();
   const [formError, setFormError] = React.useState<string | null>(null);
   const [conflict, setConflict] = React.useState(false);
+  const [photoFile, setPhotoFile] = React.useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = React.useState<string | null>(null);
+  const [photoRemoved, setPhotoRemoved] = React.useState(false);
+  const [photoError, setPhotoError] = React.useState<string | null>(null);
+  const [captureOpen, setCaptureOpen] = React.useState(false);
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
 
   const defaults = React.useMemo<FormValues>(() => buildDefaults(patient), [patient]);
 
@@ -117,27 +134,103 @@ export function PatientFormDrawer({
       reset(buildDefaults(patient));
       setFormError(null);
       setConflict(false);
+      setPhotoFile(null);
+      setPhotoRemoved(false);
+      setPhotoError(null);
+      setCaptureOpen(false);
     }
   }, [open, patient, reset]);
+
+  React.useEffect(() => {
+    if (!photoFile) {
+      setPhotoPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(photoFile);
+    setPhotoPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [photoFile]);
+
+  const choosePhoto = (files: FileList | null) => {
+    const file = files?.[0];
+    if (photoInputRef.current) photoInputRef.current.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Choose an image file.");
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError("The photo must be 10 MB or smaller.");
+      return;
+    }
+    setPhotoError(null);
+    setPhotoFile(file);
+    setPhotoRemoved(false);
+  };
+
+  const clearPhoto = () => {
+    setPhotoFile(null);
+    setPhotoError(null);
+    setPhotoRemoved(Boolean(isEdit && patient?.has_photo));
+  };
+
+  const applyPhoto = (file: File) => {
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError("The captured photo is larger than 10 MB. Try again.");
+      return;
+    }
+    setPhotoError(null);
+    setPhotoFile(file);
+    setPhotoRemoved(false);
+  };
+
+  const hasVisiblePhoto = Boolean(photoPreview || (!photoRemoved && isEdit && patient?.has_photo));
 
   const onSubmit = handleSubmit(
     async (values) => {
       setFormError(null);
       try {
+        let saved: Patient;
         if (isEdit && patient) {
-          await updatePatient.mutateAsync({
+          const result = await updatePatient.mutateAsync({
             body: toUpdatePayload(values),
             etag: etag ?? null,
             version: patient.version,
           });
-          toast.success("Patient updated", "The latest version is now on screen.");
-          onOpenChange(false);
+          saved = result.data.patient;
         } else {
           const result = await createPatient.mutateAsync(toCreatePayload(values));
-          toast.success("Patient registered", `${result.data.patient.patient_number} is ready.`);
-          onOpenChange(false);
-          onCreated?.(result.data.patient);
+          saved = result.data.patient;
         }
+
+        let photoProblem: string | null = null;
+        if (photoFile) {
+          try {
+            const result = await uploadPhoto.mutateAsync({
+              patientId: saved._id,
+              file: photoFile,
+            });
+            saved = result.data.patient;
+          } catch (error) {
+            photoProblem = messageOf(error, "The photo could not be uploaded.");
+          }
+        } else if (isEdit && photoRemoved && saved.has_photo) {
+          try {
+            const result = await deletePhoto.mutateAsync({ patientId: saved._id });
+            saved = result.data.patient;
+          } catch (error) {
+            photoProblem = messageOf(error, "The photo could not be removed.");
+          }
+        }
+
+        if (isEdit) {
+          toast.success("Patient updated", "The latest version is now on screen.");
+        } else {
+          toast.success("Patient registered", `${saved.patient_number} is ready.`);
+        }
+        if (photoProblem) toast.error("Photo not saved", photoProblem);
+        onOpenChange(false);
+        if (!isEdit) onCreated?.(saved);
       } catch (error) {
         if (error instanceof ApiError && error.isConflict) {
           setConflict(true);
@@ -159,7 +252,8 @@ export function PatientFormDrawer({
       <Modal
         open={open}
         onOpenChange={onOpenChange}
-        variant="drawer"
+        variant={isEdit ? "drawer" : "dialog"}
+        className={isEdit ? undefined : "lg:max-w-[760px]"}
         title={isEdit ? "Edit patient" : "Register a patient"}
         description={
           isEdit
@@ -179,6 +273,80 @@ export function PatientFormDrawer({
       >
         <form id="patient-form" onSubmit={onSubmit} noValidate className="space-y-6">
           <FormError message={formError} />
+
+          <section className="flex items-start gap-4">
+            <div className="shrink-0">
+              {photoPreview ? (
+                <img
+                  src={photoPreview}
+                  alt="Selected patient photo preview"
+                  className="h-20 w-20 rounded-pill border border-line object-cover"
+                />
+              ) : !photoRemoved && isEdit && patient?.has_photo ? (
+                <PatientAvatar patient={patient} size="lg" className="h-20 w-20" />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="flex h-20 w-20 items-center justify-center rounded-pill border border-dashed border-line bg-surface-2 text-faint"
+                >
+                  <Camera className="h-6 w-6" />
+                </span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="text-micro text-faint">Photo</p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => photoInputRef.current?.click()}
+                  leadingIcon={<Camera className="h-3.5 w-3.5" />}
+                >
+                  {hasVisiblePhoto ? "Change photo" : "Add photo"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setCaptureOpen(true)}
+                  leadingIcon={<Webcam className="h-3.5 w-3.5" />}
+                >
+                  Take photo
+                </Button>
+                {hasVisiblePhoto ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearPhoto}
+                    className="text-danger hover:bg-danger-soft"
+                    leadingIcon={<Trash2 className="h-3.5 w-3.5" />}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+              <p className="mt-1.5 text-small text-faint">
+                Take a photo with the camera or choose a file · JPEG, PNG, WebP or HEIC · up to 10 MB.
+              </p>
+              {photoError ? <p className="mt-1 text-small text-danger">{photoError}</p> : null}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                aria-label="Patient photo"
+                className="sr-only"
+                onChange={(event) => choosePhoto(event.target.files)}
+              />
+            </div>
+          </section>
+
+          <PatientPhotoCapture
+            open={captureOpen}
+            onOpenChange={setCaptureOpen}
+            onCapture={applyPhoto}
+          />
 
           <section className="space-y-4">
             <h3 className="text-micro text-faint">Name</h3>

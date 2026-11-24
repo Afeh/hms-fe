@@ -84,6 +84,33 @@ export function usePatient(patientId: string, enabled = true) {
   });
 }
 
+export function useUploadPatientPhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { patientId: string; file: File }) =>
+      patientsApi.uploadPhoto(input.patientId, input.file),
+    onSuccess: (result, input) => {
+      queryClient.setQueryData<Versioned<Patient>>(queryKeys.patient(input.patientId), (current) =>
+        current ? { ...current, entity: result.data.patient } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["patients"] });
+    },
+  });
+}
+
+export function useDeletePatientPhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { patientId: string }) => patientsApi.deletePhoto(input.patientId),
+    onSuccess: (result, input) => {
+      queryClient.setQueryData<Versioned<Patient>>(queryKeys.patient(input.patientId), (current) =>
+        current ? { ...current, entity: result.data.patient } : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: ["patients"] });
+    },
+  });
+}
+
 export function useCreatePatient() {
   const queryClient = useQueryClient();
   return useMutation({

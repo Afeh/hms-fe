@@ -15,11 +15,14 @@ const PatientVisitsTab = lazy(() => import("@/features/patients/PatientVisitsTab
 const PatientVitalsTab = lazy(() => import("@/features/patients/PatientVitalsTab"));
 const PatientAttachmentsTab = lazy(() => import("@/features/patients/PatientAttachmentsTab"));
 const VisitDetailPage = lazy(() => import("@/features/visits/VisitDetailPage"));
+const CaptureLinkPage = lazy(() => import("@/features/attachments/CaptureLinkPage"));
 
 export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Tokenised, unauthenticated: opened by a phone from a QR code. */}
+      <Route path="/capture/:token" element={<CaptureLinkPage />} />
       <Route element={<RequireAuth />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />

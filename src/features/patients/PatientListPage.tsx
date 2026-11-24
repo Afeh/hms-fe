@@ -2,7 +2,6 @@ import * as React from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, MoreHorizontal, Search, UserPlus, Users, X } from "lucide-react";
 
-import { Avatar } from "@/components/ui/avatar";
 import { Badge, PatientStatusBadge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Menu, MenuItem, MenuLabel } from "@/components/ui/menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/features/shell/AppShell";
+import { PatientAvatar } from "./PatientAvatar";
 import { PatientFormDrawer } from "./PatientFormDrawer";
 import { usePatients } from "@/lib/api/queries";
 import { usePermission, GatedButton } from "@/lib/permissions/Can";
@@ -224,7 +224,7 @@ export default function PatientListPage() {
                           to={`/patients/${patient._id}`}
                           className="flex items-center gap-3 rounded-sm"
                         >
-                          <Avatar name={patient.display_name} seed={patient._id} size={density === "compact" ? "sm" : "md"} />
+                          <PatientAvatar patient={patient} size={density === "compact" ? "sm" : "md"} />
                           <span className="min-w-0">
                             <span className="block truncate text-[0.9375rem] font-semibold text-ink">
                               {patient.display_name}
@@ -289,7 +289,7 @@ export default function PatientListPage() {
                     to={`/patients/${patient._id}`}
                     className="flex min-h-[64px] items-center gap-3 px-4 py-3"
                   >
-                    <Avatar name={patient.display_name} seed={patient._id} />
+                    <PatientAvatar patient={patient} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[0.9375rem] font-semibold text-ink">
                         {patient.display_name}

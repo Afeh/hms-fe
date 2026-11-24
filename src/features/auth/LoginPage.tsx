@@ -86,7 +86,7 @@ export default function LoginPage() {
         </div>
 
         <div className="relative mt-10 max-w-[38ch] lg:mt-0">
-          <h1 className="text-display">Calm, precise care — from registration to close.</h1>
+          <h1 className="text-display">Calm, precise care from registration to close.</h1>
           <p className="mt-4 max-w-[42ch] text-[0.9375rem] leading-relaxed text-white/85">
             One clinical workspace for patients, visits, vitals and documents. Built to stay out of
             the way when you are with a patient.

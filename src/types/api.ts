@@ -90,6 +90,8 @@ export interface Patient {
   display_name: string;
   age_years: number;
   last_visit_date?: string | null;
+  has_photo: boolean;
+  photo_updated_at?: string | null;
   version: number;
   created_at?: string | null;
   updated_at?: string | null;
@@ -105,6 +107,8 @@ export interface PatientListItem {
   phones: string[];
   registration_date: string;
   last_visit_date?: string | null;
+  has_photo: boolean;
+  photo_updated_at?: string | null;
   version: number;
 }
 
@@ -187,6 +191,7 @@ export interface Vitals {
   visit_id: string;
   measured_at: string;
   recorded_by?: string | null;
+  recorded_by_name?: string | null;
   temperature_c?: number | null;
   pulse_bpm?: number | null;
   systolic_mmhg?: number | null;
@@ -243,6 +248,26 @@ export interface AttachmentListResponse {
 export interface DownloadUrl {
   url: string;
   expires_at: string;
+}
+
+/** A short-lived link a phone can use to add images to one visit. */
+export interface CaptureSession {
+  id: string;
+  token: string;
+  visit_id: string;
+  expires_at: string;
+  uploads: number;
+}
+
+export interface CaptureSessionStatus {
+  visit_id: string;
+  patient_name: string;
+  patient_number: string;
+  visit_type: string;
+  visit_date: string;
+  expires_at: string;
+  uploads: number;
+  visit_open: boolean;
 }
 
 export interface TenantProfile {

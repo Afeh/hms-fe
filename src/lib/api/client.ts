@@ -76,6 +76,10 @@ export interface ApiResult<T> {
   etag: string | null;
 }
 
+export function apiUrl(path: string, query?: RequestOptions["query"]): string {
+  return buildUrl(path, query);
+}
+
 function buildUrl(path: string, query?: RequestOptions["query"]): string {
   const url = `${API_BASE}${path}`;
   if (!query) return url;

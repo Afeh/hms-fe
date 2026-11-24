@@ -1,7 +1,8 @@
-import { api, ifMatch, type ApiResult } from "./client";
+import { api, apiUrl, ifMatch, type ApiResult } from "./client";
 import type {
   Attachment,
   AttachmentListResponse,
+  CaptureSession,
   DownloadUrl,
   LoginResponse,
   LogoutResponse,
@@ -70,6 +71,16 @@ export const patientsApi = {
     api.patch<{ patient: Patient }>(`/patients/${patientId}`, body, {
       headers: matchHeader(etag, version),
     }),
+  uploadPhoto: (patientId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.upload<{ patient: Patient }>(`/patients/${patientId}/photo`, formData);
+  },
+  deletePhoto: (patientId: string) =>
+    api.request<{ patient: Patient }>(`/patients/${patientId}/photo`, { method: "DELETE" }),
+  /** Authenticated URL for a patient's photo; the version busts the browser cache. */
+  photoUrl: (patient: Pick<Patient, "_id" | "photo_updated_at">) =>
+    apiUrl(`/patients/${patient._id}/photo`, { v: patient.photo_updated_at ?? undefined }),
 };
 
 export const visitsApi = {
@@ -119,6 +130,12 @@ export const attachmentsApi = {
   },
   downloadUrl: (visitId: string, attachmentId: string) =>
     api.get<{ download: DownloadUrl }>(`/visits/${visitId}/attachments/${attachmentId}/url`),
+  createCaptureSession: (visitId: string) =>
+    api.post<{ session: CaptureSession }>(`/visits/${visitId}/capture-sessions`),
+  revokeCaptureSession: (visitId: string, sessionId: string) =>
+    api.request<{ revoked: boolean }>(`/visits/${visitId}/capture-sessions/${sessionId}`, {
+      method: "DELETE",
+    }),
 };
 
 function matchHeader(etag: string | null, version?: number): Record<string, string> {

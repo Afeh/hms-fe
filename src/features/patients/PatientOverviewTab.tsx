@@ -216,7 +216,9 @@ function VitalsSummary({ vitals }: { vitals: Vitals }) {
       : "—";
   return (
     <div>
-      <p className="text-small text-muted">Measured {formatDateTime(vitals.measured_at)}</p>
+      <p className="text-small text-muted">
+        Measured {formatDateTime(vitals.measured_at)} · Recorded by {vitals.recorded_by_name ?? "Unknown"}
+      </p>
       <dl className="mt-3 grid grid-cols-3 gap-2">
         <Metric label="Temp" value={vitals.temperature_c} unit="°C" />
         <Metric label="Pulse" value={vitals.pulse_bpm} unit="bpm" />

@@ -32,10 +32,10 @@ export function VitalsList({
   return (
     <>
       <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[760px] border-collapse text-left">
+        <table className="w-full min-w-[880px] border-collapse text-left">
           <thead>
             <tr className="border-b border-line">
-              {["Measured", "Temp", "Pulse", "Blood pressure", "Weight / height", "BMI", "Status", ""].map(
+              {["Measured", "Recorded by", "Temp", "Pulse", "Blood pressure", "Weight / height", "BMI", "Status", ""].map(
                 (heading, index) => (
                   <th key={heading || index} scope="col" className="px-4 py-2.5 text-micro text-faint first:pl-5">
                     {heading}
@@ -55,6 +55,9 @@ export function VitalsList({
                       {record.warnings.length} warning{record.warnings.length === 1 ? "" : "s"}
                     </p>
                   ) : null}
+                </td>
+                <td className="px-4 py-3 text-small text-muted">
+                  {record.recorded_by_name ?? "Unknown"}
                 </td>
                 <td className="px-4 py-3 font-mono text-small tabular text-ink">
                   {record.temperature_c ?? "—"}
@@ -108,6 +111,9 @@ export function VitalsList({
                 <p className="text-small text-muted">
                   {record.weight_kg ?? "—"} kg · {record.height_cm ?? "—"} cm · BMI{" "}
                   {record.bmi ?? "—"}
+                </p>
+                <p className="mt-0.5 text-small text-muted">
+                  Recorded by {record.recorded_by_name ?? "Unknown"}
                 </p>
               </div>
               <VitalsStatusBadge status={record.status} />
